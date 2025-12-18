@@ -5,26 +5,33 @@ const app = express();
 
 app.use(cors());
 
-// Kita guna laluan utama "/" supaya tak pusing lagi
 app.get('/', async (req, res) => {
     try {
         const { zone, period, datestart, dateend } = req.query;
-        
-        // Jika orang saja-saja buka link tanpa parameter
-        if (!zone) {
-            return res.send("Server Solatku Aktif! Sila masukkan parameter.");
-        }
+        if (!zone) return res.send("Server Aktif. Sila masukkan parameter.");
 
         let url = `https://www.e-solat.gov.my/index.php?r=esolatApi/takwimsolat&zone=${zone}&period=${period}`;
-        
         if (period === 'duration') {
             url += `&datestart=${datestart}&dateend=${dateend}`;
         }
 
-        const response = await axios.get(url);
+        // TAMBAHKAN CONFIG INI
+        const response = await axios.get(url, {
+            timeout: 15000, // Tunggu 15 saat
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json'
+            }
+        });
+
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ status: "Error", message: error.message });
+        console.error("Ralat JAKIM:", error.message);
+        res.status(500).json({ 
+            status: "Error", 
+            message: "JAKIM Timeout / Sekat Akses. Cuba lagi.",
+            detail: error.message 
+        });
     }
 });
 
